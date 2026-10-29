@@ -1,0 +1,170 @@
+OVERRIDE (read this first, it replaces any conflicting rule below)
+
+The backend has task create, list and detail endpoints, but it does NOT provide email approve/reject actions, email draft data, or generated-file data. This is expected. Do NOT stop and do NOT change the backend. Implement the full chat UI using only what the existing endpoints return, with these adjustments:
+
+1. EMAIL APPROVAL CARD (B7 item 4): do not build any approve/reject buttons or call anything that does not exist. Build the ApprovalCard component only as a presentational component that renders when the task detail response actually contains approval/email-draft data. Since the current response has none, it will simply never show. Do not fake or mock data.
+2. FILES (B7 item 6): same rule. Build the FileChip component, render it only if the task detail response contains file/download data. Otherwise show nothing.
+3. EMAIL APPROVAL TOGGLE (in the "+" menu): keep it exactly as designed. It must set and send the SAME flag, in the same payload field, that the old Naya task page sent when a task was created. If the old page did not send any such flag, keep the toggle as UI state only and send nothing extra.
+4. TOOL TOGGLES: send the selected tools in the SAME payload format the old page used. If the old page did not send tools, keep them as UI state only.
+5. HISTORY: the old History page is only a placeholder, so ignore it. Use the existing task-list endpoint for the sidebar list, and the existing task-detail endpoint when a history item is clicked.
+6. STEPS: build the steps card from whatever the task detail response exposes (status, agent names, or step data). If it only exposes an overall status, use the single "Agents are working..." row with a spinner until the result arrives, as already specified. Do not invent steps.
+7. Use the same polling approach the old Live Run page used (same endpoint and interval) for running tasks.
+
+Everything else in this document (layout, colors, sidebar, "+" menu, empty state, conversation mode, markdown rendering, animations, responsiveness, checks) must be implemented in full. At the end of your report, add a short list titled "Not supported by backend yet" naming each feature you left out and why.
+
+
+
+
+
+
+
+
+TASK (two parts): 
+PART A: Remove every "History" link from the Home page.
+PART B: Rebuild the chat/task page (existing route "/new") as a single Claude-style chatbot page. Next.js App Router + Tailwind CSS + TypeScript + Framer Motion. No images are provided, so follow every value in this prompt exactly. Do not invent, skip, or restyle anything.
+
+=====================================================
+0. STRICT RULES (apply to everything)
+=====================================================
+- Frontend UI only. Do NOT change backend code, API routes, endpoints, request methods, request payloads, response formats, or agent logic. All data (starting a run, polling/streaming results, approving an email, loading history) must keep using the SAME existing API calls with the SAME payloads. You may move or wrap existing frontend fetch logic into hooks/components, but each request must stay identical. If a requirement cannot be met without a backend change, stop and report it instead of changing the backend.
+- Do NOT change the color palette. No gradients, no emojis, no extra decoration.
+- Do NOT touch the Home page design/animations except for Part A.
+- Do NOT delete existing route files (including the old History page and the old Live Run/run-details page). They stay in the codebase untouched, but nothing in the UI may link to them anymore.
+- Use real <button>, <a>, <nav>, <aside>, <main>, <form> elements. aria-label on icon-only buttons. Icons are aria-hidden. Visible focus ring on all interactive elements: 2px outline #3b82f6 with 2px offset.
+- Font: Inter (already loaded). Icons: lucide-react, stroke width 1.7 unless stated. Mapping: search = Search, files = FileText, code = Code (the </> icon), email = Mail, lock = Lock, plus = Plus, send = ArrowUp, tick = Check, menu = Menu, close = X.
+- All UI text is English, exactly as written below.
+- Keep all copy in one typed constants object at the top of the chat components.
+
+=====================================================
+PART A: HOME PAGE - REMOVE HISTORY LINK
+=====================================================
+In the Home page components (frontend/components/home/*):
+- Remove the "History" link from the desktop nav links. The nav links become: Agents, How it works, Tools.
+- Remove "History" from the mobile dropdown menu. It lists: Agents, How it works, Tools, plus the "New task" button.
+- Remove "History" from the footer "Product" column. That column becomes: New task, Watch demo.
+- Change nothing else on the Home page. Check there are no other links to /history anywhere in the UI (search the whole frontend) and remove them.
+
+=====================================================
+PART B: CHAT PAGE
+=====================================================
+
+B1. DESIGN TOKENS (exact)
+- page/main background: #262624
+- sidebar background: #1f1f1e
+- panel/input/card background: #2f2f2d
+- border default: #3a3a37; border strong (input, menu): #454542
+- text default: #eeeeee; white: #ffffff; secondary: #a8a8a2; muted label/placeholder: #8a8a85; inactive tool text: #c9c9c4
+- blue primary: #3b82f6; blue chip background: #1e3a5f; blue chip text: #7db3ff
+- amber background: #3b2f1a; amber text: #f0b44c
+- toggle off track: #4a4a46
+- user bubble: #3a3a37
+- green tick: #4ade80
+
+B2. LAYOUT
+- The chat page fills the whole viewport: height 100dvh, flex row, background #262624, overflow hidden. It has NO top header/nav bar. If a global header exists in the layout for this route, hide it for this route only (use a route group or a route-specific layout) without affecting the Home page.
+- Left: sidebar (B3). Right: main area (B4), flex 1, flex column.
+- Smooth scroll library Lenis must NOT run on this page. Use native scrolling inside the messages container.
+- Below 1024px width the sidebar becomes an off-canvas drawer (B3 mobile).
+
+B3. SIDEBAR
+- <aside>: width 260px, flex none, background #1f1f1e, border-right 1px #3a3a37, padding 16px 12px, flex column, gap 6px, box-sizing border-box, height 100%.
+- Top: "TaskForce" text link to "/" (Home): 17px, weight 600, white, padding 4px 12px 14px.
+- "New task" button: full width row, flex, gap 10px, items center, padding 9px 12px, radius 8px, 14px, white text, background #2f2f2d, Plus icon 16px. Clicking it resets the page to the empty state (B5) without a full page reload and clears the current conversation.
+- Label "TOOLS": 11px, color #8a8a85, letter-spacing 0.06em, padding 14px 12px 4px.
+- Four tool rows (buttons): "Web search" (Search icon), "Files" (FileText), "Code" (Code), "Email" (Mail). Each: flex, gap 10px, items center, padding 9px 12px, radius 8px, 14px, icon 16px. ACTIVE (tool is on): background #1e3a5f, color #7db3ff. INACTIVE: no background, color #c9c9c4. Clicking a row toggles that tool. These toggles use the SAME existing tool state/values that the old Naya task page used (same default values and same format sent to the backend). The sidebar toggles and the "+" menu toggles (B6) share one single state. Use aria-pressed.
+- Label "HISTORY": same style as the TOOLS label.
+- History list: scrollable (overflow-y auto, flex 1, thin dark scrollbar), each item a button: padding 8px 12px, radius 8px, 13px, color #a8a8a2, single line with text-overflow ellipsis, showing the task's goal text. The currently open task has background #2f2f2d and color #eee. Data comes from the SAME existing source the old History page used (same API call). Clicking an item loads that task into this same chat page (see B8). Empty state text: "No tasks yet", 13px, #8a8a85, padding 8px 12px. Loading state: 3 skeleton rows (background #2f2f2d, radius 8px, height 32px, slow pulse).
+- Mobile/tablet (below 1024px): the sidebar is hidden and opens as a drawer from the left (width min(300px, 85vw)), with a dark overlay (rgba(0,0,0,0.5)). A mobile top bar (height 56px, sticky, background #262624, border-bottom 1px #3a3a37, flex, justify between, items center, padding 0 16px) shows: left a 44x44 Menu icon button, center "TaskForce" (16px, weight 600, white), right a 44x44 Plus icon button that does the same as "New task". The drawer closes on overlay click, Escape, or after picking a history item / New task. Drawer animation: x -100% to 0, 0.5s, ease [0.22, 1, 0.36, 1]. On mobile, sidebar rows have min-height 44px.
+
+B4. MAIN AREA
+- Main has two modes: EMPTY STATE (B5) and CONVERSATION (B7). The input box (B6) is the same component in both modes.
+- All content is horizontally centered in a column with max-width 720px, width 100%, with horizontal padding 40px on lg, 24px on md, 16px on mobile.
+
+B5. EMPTY STATE (no conversation yet)
+- Vertically centered block (flex column, items center, justify center, gap 28px), content centered:
+  - Pill: "Multi-agent system" - background #1e3a5f, color #7db3ff, radius 8px, padding 4px 10px, 12px.
+  - Heading: "Set a goal. Agents do the work." - 36px (28px on mobile), weight 600, white, margin-top 16px, text center.
+  - Subtext: "Research, code, reports and email. Watch everything live and get real files." - 15px, color #a8a8a2, margin-top 8px, text center.
+  - Then the input box (B6) centered under it, max-width 720px.
+
+B6. INPUT BOX
+- Wrapper: position relative, width 100%, max-width 720px.
+- Box: background #2f2f2d, border 1px #454542, radius 18px, padding 14px 14px 12px 16px.
+  - Textarea: transparent background, no border, no outline, 15px, color #eee, placeholder "Write your goal. The manager handles the rest." in #8a8a85, min-height 44px, auto-grows up to 200px then scrolls, resize none. Enter sends, Shift+Enter inserts a newline. (Do not send while IME composing.)
+  - Controls row: flex, items center, gap 8px, margin-top 4px:
+    1. "+" button: 34x34 circle, border 1px #454542, background transparent, color #eee, Plus icon 18px. aria-label "Add tools". Opens the tools menu (below). Hover background #3a3a37.
+    2. Active tool chips (display only), one for each tool that is ON, in order Web search, Files, Code, Email: inline-flex, gap 6px, items center, background #1e3a5f, color #7db3ff, radius 8px, padding 4px 10px, 12px, icon 13px. On mobile, if chips overflow, hide their text labels and show icons only.
+    3. Spacer (flex 1).
+    4. Send button: 34x34 circle, background #3b82f6, white ArrowUp icon 18px stroke 2. aria-label "Send". Disabled (opacity 0.4, no pointer) when the textarea is empty or a run is in progress. While a run is in progress it shows a small white spinner instead of the arrow.
+- Submitting: calls the SAME existing "start run" logic the old Naya task page used, with the same payload (goal text, selected tools, email approval flag). After submit, do NOT navigate to another page: stay on "/new", clear the textarea, switch to CONVERSATION mode, and show the run inline (B7).
+- TOOLS MENU ("+" popover): position absolute, left 0, bottom calc(100% + 10px) (opens upward above the box; if the box is near the top of the viewport, open downward), width 320px (max-width calc(100vw - 32px)), background #2f2f2d, border 1px #454542, radius 14px, padding 8px, box-shadow 0 8px 30px rgba(0,0,0,0.53), z-index 40.
+  - Four rows (each: flex, gap 12px, items center, padding 10px 12px, radius 8px, color #eee, 14px; hover background #3a3a37; whole row is a button with role "switch"):
+    - icon 18px; text block: title 14px, subtitle 12px color #8a8a85; toggle switch on the right.
+    - Web search / "Search the internet"
+    - Files / "Create and read files"
+    - Code / "Run code"
+    - Email / "Send email"
+    - Toggle switch: 34x20px, radius 10px, track #3b82f6 when ON and #4a4a46 when OFF, knob 16px white circle radius 8px at 2px from the right when ON and from the left when OFF, knob slides 0.35s.
+  - Divider: 1px, background #454542, margin 6px 4px.
+  - Approval row (role "switch"): flex, gap 12px, items center, padding 10px 12px, radius 8px, background #3b2f1a, color #f0b44c, 14px, Lock icon 18px, text "Ask for my approval before sending email" (flex 1), then "On" or "Off" bold 13px. Clicking toggles the SAME existing email-approval flag the old page used (default ON, same as before).
+  - Closes on outside click, on Escape, and returns focus to the "+" button. Animation: opacity 0 to 1, y 8 to 0, scale 0.96 to 1, 0.35s, ease [0.22, 1, 0.36, 1]. On exit reverse in 0.25s.
+
+B7. CONVERSATION MODE
+- Messages container: flex 1, overflow-y auto, native scroll, padding-top 32px (24px mobile), padding-bottom 24px. Inner column max-width 720px, centered, flex column, gap 22px.
+- The input box stays pinned at the bottom of the main area, padding-bottom 28px (use max(16px, env(safe-area-inset-bottom)) on mobile), with the same column width and padding.
+- Auto-scroll smoothly to the bottom when new content arrives, but only if the user is already near the bottom (within 120px). Do not force-scroll if they scrolled up.
+- Message types, in order:
+  1. USER MESSAGE: align-self flex-end, background #3a3a37, radius 16px, padding 12px 16px, 15px, color #eee, max-width 520px (85% on mobile), preserve line breaks. Shows the submitted goal.
+  2. AGENT STEPS CARD: background #2f2f2d, radius 12px, padding 14px 16px, flex column, gap 10px. One row per agent step, built from whatever step/agent/status data the existing run response or events already provide (Researcher, Coder, Writer, Reviewer or whatever names the backend returns). Each row: 13px, color #a8a8a2, flex, gap 10px, items center: status icon 15px (done = green #4ade80 Check; running = a 15px spinner, border 2px #3a3a37 with top border #7db3ff, rotating 1.2s linear infinite; pending = a 6px dot #8a8a85), then the agent name in bold (#eee, weight 500), then its short text/status. If the existing data does not expose step-level info, show ONE row with a spinner and the text "Agents are working..." while running, which disappears when the result arrives. Do not fabricate steps.
+  3. WAITING INDICATOR: while the run is in progress and no final text yet, show 3 small dots (6px, #8a8a85) pulsing slowly (1.4s, staggered 0.2s) below the steps card.
+  4. EMAIL APPROVAL CARD (only when the existing flow asks for email approval): background #3b2f1a, radius 12px, padding 16px 18px, color #f0b44c. Header row: Lock icon 18px + "Approval needed before sending email" 15px weight 500. Below it, the email details the existing flow already provides (to/subject/body) in 14px color #e3c58a, with the body in a block background rgba(0,0,0,0.2), radius 8px, padding 12px. Buttons row (gap 10px): "Approve" (background #3b82f6, white, radius 10px, padding 10px 16px, 14px, weight 500) and "Reject" (transparent, border 1px #5a4824, color #f0b44c, same size). They call the SAME existing approve/reject handlers. Reuse the existing approval logic from the old Live Run page and just restyle it here. Buttons are min-height 44px on touch screens.
+  5. FINAL ANSWER (the summary/result text): render as Markdown (install react-markdown and remark-gfm). Do not change the content, only render it properly instead of showing raw ### and ** characters. Styling: base 15px, line-height 1.65, color #eee. h1/h2/h3: weight 600, white, margin 20px 0 8px, sizes 22/19/17px. Paragraph margin-bottom 12px. Bold weight 600. Links: color #7db3ff, open in new tab with rel="noopener noreferrer", underline on hover. ul/ol: padding-left 22px, spacing 6px. Inline code: background #1f1f1e, radius 6px, padding 2px 6px, 13px. Code block: background #1f1f1e, border 1px #3a3a37, radius 10px, padding 14px, 13px, overflow-x auto. Tables: border 1px #3a3a37, cell padding 8px 12px, overflow-x auto wrapper. Blockquote: border-left 2px #3a3a37, padding-left 14px, color #a8a8a2.
+  6. FILES: if the existing run result includes generated files or download links, show each as a chip/link: flex, gap 10px, items center, background #2f2f2d, border 1px #3a3a37, radius 10px, padding 10px 14px, 14px, color #eee, FileText icon 16px color #7db3ff, file name; hover border #454542. Use the same download URL logic the old page used. Show nothing if there are no files.
+  7. ERROR: if the run fails, show a card: background #3b2f1a, color #f0b44c, radius 12px, padding 14px 16px, 14px, with the existing error message text, and a "Try again" button (outline, border 1px #5a4824, color #f0b44c, radius 10px, padding 8px 14px) that re-submits the same goal with the same existing logic.
+- Run progress must use the SAME polling/streaming mechanism the old Live Run page used (same endpoints, same interval). Move only the presentation. Stop polling when the run finishes or the component unmounts.
+
+B8. HISTORY BEHAVIOR (in the sidebar)
+- The history list loads from the same existing source the old History page used, newest first. Refresh the list after a run is started or finished so the new task appears at the top.
+- Clicking a history item loads that task into the chat in CONVERSATION mode: the user message (goal), the steps card if data exists, and the final answer, using the SAME existing "get run details" request the old Live Run page used. If the task is still running, continue showing it live.
+- Keep the URL in sync with a query param, e.g. /new?run=<id>, so refresh and back/forward work. "New task" clears the param. Do not create new routes.
+
+B9. ANIMATIONS (Framer Motion) - slow, smooth, same feel as the Home page
+- Easing everywhere: [0.22, 1, 0.36, 1]. Durations 0.5s to 1.1s. No bounce, no fast snaps. Animate only transform, opacity, filter.
+- On page load: sidebar fades in (0.8s); empty-state pill, heading, subtext and input stagger in (y 24 to 0, opacity 0 to 1, blur 6px to 0, 0.14s apart, 0.9s each).
+- Empty to conversation transition: the empty-state text block fades and moves up (0.5s), and the input box glides from the center to the bottom of the screen with a layout animation (0.8s).
+- New messages: user message y 16 to 0 and opacity 0 to 1 (0.7s). Steps card then fades in; each step row staggers 0.1s; when a step becomes done, the spinner crossfades to the green tick (scale 0.6 to 1, 0.4s). The final answer fades in (opacity and y 12, 0.9s). The approval card slides up (y 20 to 0, 0.8s).
+- Buttons: send and primary buttons scale 1 to 0.97 on press (0.2s). Hover transitions 0.3s to 0.4s on background/border color.
+- Sidebar history items: new items fade and slide in (0.6s).
+- Respect prefers-reduced-motion: disable all of the above except opacity changes of 0.01s.
+
+B10. RESPONSIVE
+- Test at 360, 390, 768, 1024, 1280, 1536 px. No horizontal scroll at any width.
+- >= 1024px: fixed sidebar + main. < 1024px: top bar + drawer (B3).
+- Heading 36px on md and up, 28px on mobile. Input box radius stays 18px; on mobile the textarea font is 16px (to prevent iOS zoom).
+- Use dvh units, never 100vh. Keep the input always visible above the mobile keyboard (the main area uses dvh and the input is not covered).
+- Touch targets at least 44px (including the 34px circle buttons: give them an invisible padded hit area of 44px on touch screens).
+
+B11. CODE ORGANIZATION
+- Create components under components/chat: ChatLayout, Sidebar, MobileTopBar, EmptyState, ChatInput, ToolsMenu, ToolToggleRow, Message list, UserMessage, AgentSteps, ApprovalCard, MarkdownAnswer, FileChip, plus hooks for tool state, run lifecycle (reusing the existing request logic), and history. Keep one shared tool/approval state used by both the sidebar and the "+" menu.
+- Keep copy in constants. Use stable keys. No unused code, no console.log.
+
+=====================================================
+FINAL CHECKS (mandatory before you finish)
+=====================================================
+Run in order and fix every problem until all pass with zero errors:
+1. npx tsc --noEmit
+2. npm run lint
+3. npm run build
+(Run these inside the frontend folder. If you install packages, install them inside the frontend folder too, never in the repo root.)
+
+Rules while fixing:
+- Fix root causes. Do NOT disable ESLint rules, do NOT add @ts-ignore or eslint-disable, do NOT use "any", and do NOT edit tsconfig, ESLint, or Next.js config to silence errors.
+- Components using hooks, Framer Motion, or browser APIs must have "use client". Anything using window/document runs inside useEffect.
+- No hydration warnings and no console errors or warnings in the browser at any width.
+- If a fix needs a backend change, stop and report it.
+
+After the checks pass:
+- Start the dev server and confirm "/" and "/new" both load without errors, and that the chat page works end to end: start a task, see steps, see the markdown result, open a history item from the sidebar, toggle tools from both the sidebar and the "+" menu, and (if email is enabled) the approval card works.
+- Verify no horizontal scroll at 360, 768 and 1280 px.
+- Run git status and git diff --stat. Confirm that no backend or API file was modified, no route file was deleted, and that nothing in the UI links to /history anymore.
+- Report the final result of tsc, lint and build, and list every file created or changed.

@@ -1,0 +1,205 @@
+TASK: Rebuild ONLY the Home page (route "/") of the TaskForce web app. Next.js App Router + Tailwind CSS + TypeScript. Add Framer Motion and Lenis animations. No images are provided, so follow every value in this prompt exactly. Do not invent, skip, or restyle anything.
+
+=====================================================
+0. STRICT RULES
+=====================================================
+- Frontend UI only. Do NOT touch backend, API routes, agent logic, handlers, hooks, response formats, or the chat/task page. The chat page is locked.
+- All text on this page is English. Use the exact copy given below.
+- Do not change the palette below. No gradients, no emojis, no extra sections, no extra decoration.
+- "Start a task" buttons (hero + CTA) and the nav "New task" button navigate to the existing chat/task route using the existing router/link logic (find the current route, do not rename it). Nav "History" link goes to the existing History route/link if one exists, otherwise to the chat route. "Watch demo" keeps its existing behavior (if none, leave as a no-op button).
+- Install: framer-motion, lenis, lucide-react (if not installed).
+- Font: Inter (next/font/google, weights 400, 500, 600), fallback system-ui. Whole page is dark. Set html/body background #262624.
+- Use real <button>, <a>, <nav>, <section>, <footer> elements. aria-label on icon-only buttons. Icons are aria-hidden.
+
+=====================================================
+1. DESIGN TOKENS (exact)
+=====================================================
+Colors:
+- page background: #262624
+- default text: #eeeeee
+- headings/white: #ffffff
+- secondary text: #a8a8a2
+- muted text/labels: #9a9a95
+- nav link text: #c9c9c4
+- panel/card background: #2f2f2d
+- darker frame background (preview): #1f1f1e
+- border (default): #3a3a37
+- border (strong, preview frame): #454542
+- outline button border: #5a5a56
+- blue (primary): #3b82f6
+- blue chip background: #1e3a5f
+- blue chip text/accent: #7db3ff
+- amber background: #3b2f1a, amber text: #f0b44c, amber divider: #5a4824, amber body text: #e3c58a
+- green tick: #4ade80
+- user bubble: #3a3a37
+- chat answer text: #d8d8d3
+Layout wrapper (used by every section): width 100%, max-width 1160px, margin auto, horizontal padding 24px (px-5 on mobile, px-6 from sm up).
+Section vertical spacing: each section after the hero has padding-top 128px on lg, 104px on md, 80px on mobile.
+Header-to-content gap inside a section: 44px.
+Icons: lucide-react, stroke width 1.7 unless stated. Mapping: search = Search, document/file = FileText, code = Code (the </> icon), email = Mail, lock = Lock, double check = CheckCheck, arrow right = ArrowRight, plus = Plus, send = ArrowUp, single tick = Check.
+
+=====================================================
+2. PAGE STRUCTURE (top to bottom, in this order)
+=====================================================
+Page root: min-h-dvh, flex column, background #262624, color #eee. Footer is pushed to the bottom with margin-top auto.
+
+--- 2.1 NAV (sticky) ---
+- position sticky, top 0, z-index 50, background #262624 (when scrolled add backdrop blur and keep the bg at 90% opacity), border-bottom 1px #3a3a37.
+- Inner wrapper (layout wrapper), height 68px, flex, items center, justify between.
+- Left: logo. A 26x26 rounded-[8px] square, background #3b82f6, white CheckCheck icon 15px stroke 2.2 centered; then 10px gap; text "TaskForce" 18px, weight 600, white, letter-spacing -0.01em.
+- Center (hidden below md): 4 links, gap 32px, 14px, color #c9c9c4, no underline: "Agents", "How it works", "Tools", "History". The first three smooth-scroll to their sections (ids: agents, how-it-works, tools) using Lenis scrollTo. Hover color goes to #ffffff over 0.4s.
+- Right: button "New task": 14px, weight 500, white text, background #3a3a37, no border, radius 10px, padding 10px 16px. Hover background #454542.
+- Below md: show a hamburger icon button (44x44) instead of the center links; it opens an animated dropdown panel (background #2f2f2d, border 1px #3a3a37, radius 16px, padding 12px) listing the 4 links plus "New task", animated open/close with height + opacity, 0.5s.
+
+--- 2.2 HERO ---
+- Wrapper, padding-top 96px (64px on mobile), flex column, items center, text center, gap 26px.
+- Pill: text "Multi-agent system", background #1e3a5f, color #7db3ff, radius 999px, padding 7px 14px, 13px, weight 500.
+- H1: two lines. Line 1: "Set the goal." Line 2: "Your agents do the work." Font weight 600, color white, letter-spacing -0.035em, line-height 1.05, max-width 860px. Size: 40px on mobile, 52px from sm, 68px from lg. Keep the line break between the two lines on sm and up; on mobile it may wrap naturally.
+- Paragraph: "Research, code, reports and email, handled by a team of AI agents. Watch every step live and approve before anything is sent." 19px (17px on mobile), line-height 1.6, color #a8a8a2, max-width 620px.
+- Buttons row: margin-top 6px, gap 12px, flex wrap, centered. On mobile they stack and are full width (max-width 360px).
+  - Primary "Start a task": 15px, weight 500, white text, background #3b82f6, no border, radius 12px, padding 14px 22px, inline-flex, gap 10px, ArrowRight icon 16px stroke 2 after the text, box-shadow 0 6px 24px rgba(59,130,246,0.30).
+  - Outline "Watch demo": 15px, weight 500, white text, transparent background, border 1px #5a5a56, radius 12px, padding 14px 22px.
+  - Hover: primary brightens slightly and arrow moves 4px right; outline border becomes #8a8a85. Transitions 0.4s.
+
+--- 2.3 PRODUCT PREVIEW (a static miniature of the chat UI, not interactive) ---
+- Wrapper with padding-top 72px (48px on mobile).
+- Frame: border 1px #454542, radius 20px, background #1f1f1e, overflow hidden, box-shadow 0 30px 80px rgba(0,0,0,0.6), display flex, height 420px on md and up (auto, min-height 360px on mobile).
+- Left sidebar (hidden below md): width 200px, no shrink, border-right 1px #3a3a37, padding 14px 10px, flex column, gap 4px. Contents in order:
+  1. "TaskForce": 14px, weight 600, white, padding 2px 10px 12px.
+  2. "New task" row: Plus icon 13px + text, 12px, white, background #2f2f2d, radius 7px, padding 7px 10px, gap 8px.
+  3. Label "TOOLS": 10px, color #9a9a95, letter-spacing 0.08em, padding 12px 10px 3px.
+  4. Four rows (12px, radius 7px, padding 7px 10px, gap 8px, icon 13px): "Web search" (Search), "Files" (FileText), "Code" (Code), "Email" (Mail). Web search, Files, Email are ACTIVE: background #1e3a5f, color #7db3ff. Code is INACTIVE: no background, color #c9c9c4.
+  5. Label "HISTORY": same style as TOOLS label.
+  6. One row: "3 key facts about Claude AI", 12px, color #eee, background #2f2f2d, radius 7px, padding 6px 10px.
+- Right chat area: flex 1, background #262624, padding 26px 40px 18px (20px on mobile), flex column, justify space-between.
+  - Top group (flex column, gap 16px):
+    a. User bubble aligned to the right: background #3a3a37, radius 14px, padding 10px 14px, 13px, color #eee, max-width 85%: "Find 3 key facts about Claude AI, with a source link for each."
+    b. Steps card: background #2f2f2d, radius 10px, padding 12px 14px, flex column, gap 8px. Three rows, each 12px, color #a8a8a2, flex, gap 8px, items center: a green Check icon (#4ade80, 13px, stroke 2), then a bold name (color #eee, weight 500), then the text. Rows: "Researcher" + "Searching the web"; "Writer" + "Drafting the summary"; "Reviewer" + "Checks complete".
+    c. Answer text: 13px, line-height 1.6, color #d8d8d3: line 1 "1. Claude is Anthropic's AI assistant for Q&A, writing and coding." line 2 "2. It is built to be helpful, honest and harmless."
+  - Bottom input bar: background #2f2f2d, border 1px #454542, radius 14px, padding 10px 12px, flex, items center, gap 8px. Left: 28px circle, border 1px #454542, white Plus icon 15px. Middle (flex 1): placeholder text "Write your goal..." 13px, color #9a9a95. Right: 28px circle, background #3b82f6, white ArrowUp icon 15px stroke 2.
+
+--- 2.4 AGENTS SECTION (id="agents") ---
+Section header (reused by Agents, How it works, Tools): flex column, gap 14px, max-width 620px.
+  - Eyebrow: 13px, weight 500, color #7db3ff, UPPERCASE, letter-spacing 0.12em.
+  - Title: weight 600, white, letter-spacing -0.025em, line-height 1.12. Size 30px mobile, 36px md, 40px lg.
+  - Subtext: 17px, line-height 1.6, color #a8a8a2.
+Copy: eyebrow "Agents"; title "A full team, working in sync."; subtext "A manager splits your goal across four specialists, so each part of the job is done by the right agent."
+Cards grid: gap 16px; 1 column mobile, 2 columns sm, 4 columns lg. Each card: background #2f2f2d, border 1px #3a3a37, radius 16px, padding 24px, flex column, gap 10px.
+  - Top row (flex, justify between, items center): icon box (background #1e3a5f, color #7db3ff, radius 10px, padding 10px, icon 20px) and the index number on the right (13px, color #9a9a95).
+  - Title: 19px, weight 600, white, margin-top 14px, letter-spacing -0.01em.
+  - Description: 15px, line-height 1.55, color #a8a8a2.
+Cards in order:
+  01 / Search icon / "Researcher" / "Searches the web and collects facts with source links."
+  02 / Code icon / "Coder" / "Writes and runs code to produce real results."
+  03 / FileText icon / "Writer" / "Turns findings into clear reports and files."
+  04 / CheckCheck icon / "Reviewer" / "Checks every result before it reaches you."
+
+--- 2.5 HOW IT WORKS (id="how-it-works") ---
+Header: eyebrow "How it works"; title "From goal to result in three steps."; subtext "No setup and no prompts to engineer. Describe what you need in plain language."
+Steps: 3 columns on md and up, 1 column on mobile, gap 28px. Each step: border-top 2px solid #3b82f6 (this is the animated line), padding-top 22px, flex column, gap 10px.
+  - Number: 14px, weight 500, color #7db3ff.
+  - Title: 22px, weight 600, white, letter-spacing -0.015em.
+  - Description: 15px, line-height 1.6, color #a8a8a2.
+Steps: "01" / "Describe your goal" / "Type what you want done in the chat box and pick the tools the agents may use."; "02" / "Watch agents work" / "Follow every step live as the Researcher, Coder, Writer and Reviewer collaborate."; "03" / "Review and receive" / "Get a finished summary or file, with sources, in the same conversation."
+Implementation note: render the blue top line as its own absolutely positioned 2px element (background #3b82f6) so it can animate; do not use a CSS border for it.
+
+--- 2.6 TOOLS (id="tools") ---
+Header: eyebrow "Tools"; title "Everything your agents need."; subtext "Turn tools on or off from the plus button in the chat box, per task."
+Bento grid, gap 16px. On lg: two rows. Row 1: "Web search" (flex 2) + "Files" (flex 1). Row 2: "Code" (flex 1) + "Email" (flex 2). On mobile and sm: single column, all full width. Each card: background #2f2f2d, border 1px #3a3a37, radius 16px, padding 26px, flex column, gap 10px, min-height auto.
+  - Icon 24px, color #7db3ff.
+  - Title: 19px, weight 600, white, margin-top 12px.
+  - Description: 15px, line-height 1.55, color #a8a8a2.
+Cards: Search / "Web search" / "Pull in current information from the web, always with source links."; FileText / "Files" / "Receive real files, not just text in a chat window."; Code / "Code" / "Agents write and run code to get you real output."; Mail / "Email" / "Send results to anyone, once you approve it."
+
+--- 2.7 CONTROL SECTION ---
+- Panel: background #2f2f2d, border 1px #3a3a37, radius 24px, padding 56px on lg (40px md, 24px mobile), flex, gap 56px, items center, stacks vertically below lg (gap 32px).
+- Left column (flex 1, flex column, gap 14px): eyebrow "Control" (same eyebrow style); title "Nothing is sent without your approval." (weight 600, white, letter-spacing -0.025em, line-height 1.15, 36px lg / 28px mobile); body "Agents can draft and prepare emails, but they always stop and ask you first. You decide what goes out." (17px, line-height 1.6, color #a8a8a2).
+- Right column (flex 1): amber card, background #3b2f1a, radius 16px, padding 22px, flex column, gap 16px.
+  - Row: flex, gap 12px, items center, color #f0b44c, 16px, weight 500: Lock icon 20px, then text "Ask for my approval before sending email" (flex 1), then "On" bold 14px.
+  - Divider: 1px height, background #5a4824.
+  - Text: "Email draft ready. Review it, then approve or reject." 14px, line-height 1.6, color #e3c58a.
+
+--- 2.8 CTA ---
+- Box: border 1px #3a3a37, radius 24px, padding 72px 24px (48px 20px on mobile), text center, flex column, items center, gap 20px.
+- Title: "Ready to put your agents to work?" weight 600, white, letter-spacing -0.03em, line-height 1.1, max-width 640px. 44px lg, 38px md, 30px mobile.
+- Subtext: "Write a goal and let the team handle the rest." 17px, color #a8a8a2.
+- Button: same primary button as hero ("Start a task" + arrow), margin-top 8px.
+
+--- 2.9 FOOTER ---
+- Outer: margin-top auto, padding-top 128px (80px mobile), then a divider line (border-top 1px #3a3a37 drawn as an animatable element) spanning full width.
+- Inner (layout wrapper): padding-top 56px, padding-bottom 32px, flex column, gap 48px.
+- Top row: flex, gap 56px, wrap, justify between (stacks vertically below md).
+  - Left block (max-width 300px, flex column, gap 14px): logo (same as nav logo, 18px) and text "A multi-agent system that researches, codes, writes and emails on your behalf." 14px, line-height 1.6, color #a8a8a2.
+  - Right: 3 link columns with gap 72px (gap 40px on mobile, 2 columns on mobile then 3 from sm). Each column: flex column, gap 12px; column title 13px, weight 500, white; links 14px, color #a8a8a2, no underline, hover color #ffffff (0.4s).
+    - "Product": New task, History, Watch demo
+    - "Agents": Researcher, Coder, Writer, Reviewer
+    - "Tools": Web search, Files, Code, Email
+- Bottom: border-top 1px #3a3a37 (animatable line), padding-top 22px, 13px, color #9a9a95: "© 2026 TaskForce. All rights reserved."
+
+=====================================================
+3. SMOOTH SCROLL (Lenis)
+=====================================================
+- Create a client component SmoothScroll that initializes Lenis (duration 1.4, easing t => Math.min(1, 1.001 - Math.pow(2, -10 * t)), smoothWheel true, touch scroll left native). Drive it with requestAnimationFrame, destroy on unmount.
+- Mount it ONLY for the Home page (inside the home page component or a home-only layout), not in the root layout, so the chat page scroll is never affected.
+- Expose scrollTo for the nav anchor links (offset -80).
+- If prefers-reduced-motion is set: do not initialize Lenis and disable all animations below.
+
+=====================================================
+4. ANIMATIONS (Framer Motion) - slow, smooth, premium
+=====================================================
+Global rules:
+- Easing everywhere: [0.22, 1, 0.36, 1]. Durations between 0.9s and 1.4s. Nothing fast, no bounce, no spring overshoot.
+- Animate only transform, opacity, and filter.
+- Build a reusable <Reveal> wrapper: initial { opacity: 0, y: 40, filter: "blur(8px)" }, whileInView { opacity: 1, y: 0, filter: "blur(0px)" }, viewport { once: true, amount: 0.25 }, transition duration 1.1, accepts a delay prop. Content must NOT be visible before the user scrolls to it.
+- Build a reusable stagger container variant with staggerChildren 0.14 and delayChildren 0.1.
+- On mobile reduce y to 24 and blur to 4px.
+
+Per element:
+- Page load (hero, plays automatically in this order): nav fades down (y -20 to 0, 1s); pill (delay 0.3); H1 revealed line by line (each line wrapped in an overflow-hidden block, inner text y 100% to 0, 1.2s, second line delayed 0.15s after the first, starting at delay 0.5); paragraph (delay 0.9); buttons (delay 1.1).
+- Product preview: whileInView, y 80 to 0, scale 0.96 to 1, opacity 0 to 1, 1.4s. Add a subtle parallax (useScroll + useTransform: the frame moves about 40px slower than the page). Inside, once the frame is in view: user bubble fades in, then the steps card, then each step row one by one (0.5s apart) with the green tick scaling from 0 to 1, then the answer text lines fade in.
+- Section headers (eyebrow, title, subtext): staggered Reveal, 0.14s apart.
+- Agents cards, Tools cards: staggered Reveal (0.14s apart, left to right, top to bottom). Hover (desktop only): translateY -4px and border-color to #454542, transition 0.5s; the icon box slowly brightens.
+- How it works: each step's blue top line draws from left to right (scaleX 0 to 1, transformOrigin left, 1.4s, staggered 0.2s per step) when it enters the viewport; the number, title and description fade up 0.4s after the line starts.
+- Control section: panel Reveal; the amber card slides in from the right (x 40 to 0) with delay 0.2; the lock icon fades in last.
+- CTA box: its border/box fades and scales from 0.97 to 1; title, subtext, button staggered after. The primary button has a very slow soft glow pulse on its box-shadow (opacity cycling 3s, infinite, ease-in-out).
+- Footer: the top divider line draws left to right (scaleX 0 to 1, 1.4s) when the footer enters view; columns stagger fade up; the bottom divider line draws left to right 0.3s later, then the copyright text fades in.
+- Nav: once scrollY > 10, apply backdrop-blur and bg at 90% opacity with a 0.5s transition.
+- Optional but include: a 2px blue (#3b82f6) scroll progress line fixed at the very top of the page (useScroll scrollYProgress mapped to scaleX, origin left, z-index above nav).
+
+=====================================================
+5. RESPONSIVE
+=====================================================
+- Mobile-first Tailwind. Must look correct and have NO horizontal scroll at 360, 390, 768, 1024, 1280, 1536 px widths.
+- Use the breakpoint rules already stated in each section (nav hamburger below md, preview sidebar hidden below md, grids 1/2/4 and 1/3, tools single column below lg, control section stacks below lg, footer stacks below md).
+- All interactive elements are at least 44px tall on touch screens.
+- Use min-h-dvh, not 100vh. No fixed pixel widths on containers (only max-widths).
+
+=====================================================
+6. CODE ORGANIZATION AND OUTPUT
+=====================================================
+- Split into clean components: Navbar, Hero, ProductPreview, AgentsSection, HowItWorks, ToolsSection, ControlSection, CtaSection, Footer, SectionHeader, PrimaryButton, Reveal, SmoothScroll. Put them in a home-specific folder (for example components/home).
+- Keep all copy and data (agents, steps, tools, footer columns) in typed arrays at the top of each component.
+- Do not modify any file outside the Home page route, its components, global CSS needed for the font, and package.json.
+- When finished, list every file created or changed, and confirm that no backend, API, or chat page file was touched.
+
+=====================================================
+7. FINAL CHECKS (mandatory before you finish)
+=====================================================
+Run these commands in order and fix every problem they report. Do not finish until all of them pass with zero errors:
+1. npx tsc --noEmit
+2. npm run lint
+3. npm run build
+
+Rules while fixing:
+- Fix the root cause in the code you wrote. Do NOT disable ESLint rules, do NOT add // @ts-ignore or // eslint-disable, do NOT use the "any" type, and do NOT edit tsconfig, ESLint, or Next.js config files to silence errors.
+- No unused imports, variables, or components. No console.log left in the code.
+- Components that use hooks, Framer Motion, Lenis, or browser APIs must have "use client" at the top. Server components must not import them.
+- No hydration warnings or console errors or warnings in the browser at any width. Anything that depends on window or document must run inside useEffect, not during render.
+- All lists use stable keys. All images, if any, use next/image with width and height.
+- If a fix needs a change outside the Home page files, stop and report it instead of changing it.
+
+After the checks pass:
+- Start the dev server (npm run dev) and confirm the home page loads at "/" with no errors.
+- Confirm the home page works at 360px, 768px and 1280px widths with no horizontal scroll.
+- Confirm that the chat page still works exactly as before and that no backend, API, or chat page file was modified (run git status or git diff --stat and show the list of changed files).
+- Report the final output of tsc, lint, and build (pass or fail for each).

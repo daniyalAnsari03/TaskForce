@@ -1,0 +1,44 @@
+PHASE 2: FIRST AGENT (Researcher + web search + POST /tasks + New Task page)
+
+Project folder: D:\TaskForce_Mutli_Agent. Phase 0 (specs, SKILL.md) and Phase 1 (foundation) are done. Do ONLY Phase 2. Do not start Phase 3.
+
+RULES
+- Frontend design is LOCKED. Use only the existing tokens, Inter font, Tabler outline icons (stroke 1.5), transparent buttons with 0.5px border #5A5A56, 0.5px borders, flat design. Do not change any token or style.
+- Exactly five agents exist in the final project; in this phase build only the Researcher.
+- Frontend talks ONLY to FastAPI via NEXT_PUBLIC_API_URL. Never to Supabase. The Supabase service key stays only in backend/.env.
+- Do NOT guess SDK or library function names. Before writing code, read the CURRENT docs for: OpenAI Agents SDK (Python) agents, Runner, function tools, MCP server support; Tavily search API and Tavily MCP server; FastAPI background tasks. Use only APIs you confirmed in the docs.
+- Follow spec-driven development: read backend/app/specs/researcher.md and backend/app/skills/researcher/SKILL.md first. The agent instructions must be loaded from SKILL.md at startup. If the spec and your plan disagree, tell me before changing the spec.
+- Secrets: read OPENAI_API_KEY, OPENAI_MODEL, TAVILY_API_KEY from backend/.env. Never hardcode or print keys. Add them to .env.example with empty values. Make sure .env is in .gitignore.
+
+BACKEND TASKS
+1. Dependencies: add what is needed (openai-agents, tavily or the MCP package, supabase client if not already present) and update requirements.
+2. Web search through MCP: connect the Tavily MCP server to the Researcher agent using the Agents SDK MCP support (as documented). If MCP cannot be made to work after a reasonable attempt, fall back to a plain function tool that calls the Tavily search API, and clearly state in your report that you used the fallback and why.
+3. Researcher agent in backend/app/agents/researcher.py: one Agent with name, instructions loaded from skills/researcher/SKILL.md, model from OPENAI_MODEL, and the web search tool attached.
+4. Database: use the existing Supabase tables only (tasks, task_steps, tool_calls). Do not edit old migrations. If a schema change is truly needed, add a NEW timestamped migration and explain why first.
+5. API in backend/app/api/:
+   - POST /tasks: body {goal: string, tools: string[], require_approval: bool}. Validate goal is not empty. Insert a tasks row (status queued), start the Researcher run in the background, return {id}.
+   - GET /tasks: list of tasks (id, goal, status, created_at).
+   - GET /tasks/{id}: task detail including status, summary (the final answer), error_message, and its task_steps and tool_calls.
+   The background run must: set status running and started_at; run the Researcher with the goal; save one task_steps row for the Researcher; save each web search as a tool_calls row (input, output, status ok or failed); on success save the final answer into tasks.summary and set status completed with finished_at; on any error set status failed with a clear error_message. Never let an exception crash the server silently.
+6. CORS: allow the frontend origin (http://localhost:3000) through an environment variable.
+
+FRONTEND TASKS (New Task page, route /new)
+Build exactly as in the context file, Page 2:
+- Heading "Naya task", subtext "Apna goal likhein. Manager baqi sab sambhal lega."
+- Textarea with placeholder "Competitor X ki research karo, report banao aur boss ko email karo".
+- "Tools" label, four ToolChips: Web search, Files, Code, Email. Default selected: Web search, Files, Email. Code not selected. Selected = accent text on accent-bg, unselected = muted text on card color.
+- Warning strip toggle "Email se pehle meri approval lo" with On/Off, default On, using warning colors.
+- Full-width "Run agents" button, disabled while the textarea is empty. While submitting, change the text to a short loading label. On error show small danger-colored text under the button.
+- On submit: POST {NEXT_PUBLIC_API_URL}/tasks with goal, tools, require_approval via lib/api.ts. On success navigate to /run/{id}.
+- Add types in lib/types.ts as needed. Reuse existing UI components (Button, ToolChip, Container, Navbar); create missing ones (Textarea, Toggle row) in components/ui/ following the locked tokens.
+- Temporary Phase 2 behavior on /run/[id]: since the Live Run page is built in Phase 4, make this page minimal for now. It should fetch GET /tasks/{id}, poll every 2 seconds until status is completed or failed, and show the goal, status badge, and the summary text (final answer) or the error. Keep it simple, in the locked style, and mark it clearly in code comments as temporary until Phase 4.
+
+CHECKS (run them yourself before reporting)
+- Backend starts without errors. GET /health and /health/db still work.
+- POST /tasks with a real goal (example: "Find 3 key facts about Pakistan's IT exports") returns an id, and GET /tasks/{id} eventually shows status completed with a non-empty summary and at least one tool_calls row.
+- POST /tasks with an empty goal returns a clear validation error.
+- Frontend builds with no TypeScript errors (npm run build or the project's check command).
+- If OPENAI_API_KEY or TAVILY_API_KEY is missing, the backend must fail with a clear message, not a crash.
+
+FINAL OUTPUT
+Do not create any report file. Reply in chat with an IMPLEMENTATION REPORT containing: files created or changed; which docs you read and the exact SDK functions you used; whether web search runs through MCP or the fallback (and why); the commands to run backend and frontend; the exact steps for me to test; any problems or open questions; anything you were unsure about. Do not commit to git.

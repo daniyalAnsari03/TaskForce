@@ -1,0 +1,31 @@
+GIT TASK ONLY. Do not change any source code in frontend/, backend/ or supabase/.
+
+PROJECT FOLDER: D:\TaskForce_Mutli_Agent
+REMOTE: https://github.com/daniyalAnsari03/TaskForce.git
+
+STRICT RULES
+- NEVER use --force or --force-with-lease. NEVER rewrite history.
+- NEVER commit secrets. backend/.env, any .env*, Supabase keys, and API keys must not be committed.
+- If anything unexpected happens (push rejected, remote has files, auth fails), STOP and report. Do not try to work around it.
+
+STEPS
+1. Run `git status` and `git remote -v`. Report the current branch and remotes.
+2. SAFETY CHECK before staging:
+   - Run `git check-ignore -v backend/.env` and `git check-ignore -v frontend/node_modules`.
+   - Also confirm these are ignored: frontend/.next, backend/.venv (or venv), __pycache__, *.pyc.
+   - If .gitignore is missing or any of them is NOT ignored, add the missing lines to the root .gitignore (additive only), then re-check.
+   - Run `git ls-files | findstr /i ".env"` after staging (step 3) to prove no .env file is tracked. Only .env.example is allowed.
+3. Run `git add .` then `git status` and list what will be committed (summary, not every file).
+4. If any secret-looking file is staged, run `git reset` and STOP and report.
+5. Commit: `git commit -m "Phase 1-3, UI redesign, chat logo and word-by-word streaming"`
+6. Remote:
+   - If no `origin` exists: `git remote add origin https://github.com/daniyalAnsari03/TaskForce.git`
+   - If `origin` exists with a different URL: `git remote set-url origin https://github.com/daniyalAnsari03/TaskForce.git`
+7. Run `git branch -M main` then `git push -u origin main`.
+8. If the push is rejected because the remote already has commits, do NOT force. Run `git fetch origin` and report `git log --oneline origin/main` and the exact error, then stop.
+
+END WITH A REPORT:
+- Branch name and commit hash
+- Number of files committed
+- Proof that backend/.env is not tracked
+- Push result (exact output or exact error)

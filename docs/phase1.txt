@@ -1,0 +1,46 @@
+You are working on the project at D:\TaskForce_Mutli_Agent (the folder spelling "Mutli" is intentional, keep it). Phase 1 (Foundation): backend skeleton and frontend shell are done. Now do the steps below in order. Do NOT touch the frontend design or components. Do NOT create backend/.env (I will create it myself with real keys). Do NOT put any real key anywhere. Do NOT commit.
+
+RULES
+- Supabase is the System of Record. All tables are created ONLY through migration files in supabase/migrations/. Never edit an old migration later, add a new one.
+- The Supabase service key lives only in backend/.env. The frontend never talks to Supabase.
+- Check the CURRENT official docs for supabase-py (Python client), the Supabase CLI, and Supabase Storage before writing code. Do not guess function names, key names or SQL for storage. Python in the venv is 3.13, so confirm the supabase package supports it. Supabase has newer API key naming (publishable/secret keys) and legacy (anon/service_role); check the docs and tell me in the report which one the Python client expects.
+
+STEP A: Fix .gitignore
+1. Open frontend/.gitignore. It ignores .env*, which also ignores frontend/.env.example. Change it so frontend/.env.example is tracked (add a negation line like !.env.example after the .env* line).
+2. Open the root .gitignore and make sure it really contains these exact lines: __pycache__/ , *.pyc , .env , .env.* , !.env.example , backend/.venv/ , node_modules/ , frontend/.next/ , .DS_Store , *.log
+3. Run `git status --ignored` and confirm frontend/.env.example and backend/.env.example (created below) are NOT ignored, while .env, .venv and node_modules are ignored. Use `git check-ignore -v <path>` for proof.
+
+STEP B: Backend Supabase connection
+1. Install the supabase Python package in backend/.venv and update backend/requirements.txt (pip freeze).
+2. Create backend/.env.example with these names and empty or placeholder values (no real values):
+   SUPABASE_URL=
+   SUPABASE_SERVICE_KEY=
+   SUPABASE_STORAGE_BUCKET=task-outputs
+3. Create backend/app/db/__init__.py and backend/app/db/supabase_client.py: load settings from environment (python-dotenv is already used in main.py), create ONE Supabase client using SUPABASE_URL and SUPABASE_SERVICE_KEY, expose a function get_supabase() that returns it (create lazily, cache it). If the variables are missing, raise a clear error message that says which variable is missing. Never print or log the key.
+4. In backend/app/main.py add a new endpoint GET /health/db: it runs a tiny read on the tasks table (select id, limit 1) and returns {"db": "ok"} on success. On failure return HTTP 503 with {"db": "error", "detail": "<short safe message>"} and never include the key in the message. Keep the existing GET /health exactly as it is.
+
+STEP C: Database migration (supabase/migrations/)
+1. Check if the Supabase CLI is available (`supabase --version`, or `npx supabase --version`). If supabase/config.toml does not exist, run `supabase init` (or the npx equivalent) inside D:\TaskForce_Mutli_Agent so the supabase/ folder is a valid CLI project. Do NOT run `supabase login`, `supabase link` or `supabase db push` (I will do those, they need my account).
+2. Create ONE migration file with the CLI (`supabase migration new init_schema`) so it gets a proper timestamp name. Put this schema in it (use gen_random_uuid() for ids, timestamptz columns, created_at default now()):
+   - tasks: id uuid pk, goal text not null, status text not null default 'queued' check in (queued, running, waiting_approval, completed, failed), enabled_tools text[] not null default '{}', require_approval boolean not null default true, summary text, error_message text, created_at, started_at, finished_at
+   - task_steps: id uuid pk, task_id uuid not null references tasks(id) on delete cascade, agent text not null, step_index int not null, status text not null default 'waiting' check in (waiting, working, done, failed), message text, started_at, finished_at
+   - tool_calls: id uuid pk, task_id uuid not null references tasks on delete cascade, step_id uuid references task_steps(id) on delete set null, tool_name text not null, input jsonb, output jsonb, status text not null default 'running' check in (running, ok, failed), created_at
+   - approvals: id uuid pk, task_id uuid not null references tasks on delete cascade, tool_call_id uuid references tool_calls(id) on delete set null, action text not null, payload jsonb, status text not null default 'pending' check in (pending, approved, rejected), created_at, decided_at
+   - files: id uuid pk, task_id uuid not null references tasks on delete cascade, name text not null, mime_type text, storage_path text not null, size_bytes bigint, created_at
+   - Indexes on the foreign keys (task_id etc.) and on tasks(created_at desc).
+   - Enable Row Level Security on all 5 tables and add NO policies (the backend uses the service key which bypasses RLS, and this blocks any direct anonymous access).
+   - Create a PRIVATE storage bucket named task-outputs (public = false) in the same migration, using the correct SQL for the current Supabase version (check docs).
+3. Read the SQL file back and check it for syntax mistakes. If the CLI offers a local validation that does not need my account or Docker, run it. If it needs Docker or login, do not run it, just say so.
+
+STEP D: README
+Add a short section "Database setup" to README.md listing the manual steps I will do (create backend/.env from .env.example, supabase login, supabase link --project-ref <ref>, supabase db push, then check GET /health/db). Use the real commands for the CLI version you found, from the docs.
+
+STEP E: Verify (actually run these, do not just say verified)
+1. `python -c "import app.main"` from backend with the venv active must work with no .env present (the client must be created lazily, so importing must not crash).
+2. Print the list of routes (must include /health and /health/db).
+3. Print the full contents of supabase_client.py and the migration SQL file.
+4. `git status` output from the repo root.
+5. Do not start long-running servers. Do not ask for screenshots. You are a CLI tool.
+
+FINAL REPORT
+Give an "IMPLEMENTATION REPORT — Phase 1 Steps 4-5": files created, package versions, which key naming the supabase Python client expects (from docs), real outputs of the checks above, anything you were unsure about, and every deviation from this prompt. If something failed or could not be run, say so plainly. Do not write "verified" for anything you did not run.
